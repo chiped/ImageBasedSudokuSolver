@@ -1,0 +1,370 @@
+#include<opencv2/core/core.hpp>
+#include<opencv2/highgui/highgui.hpp>
+#include<opencv2/imgproc/imgproc.hpp>
+#include<opencv2/features2d/features2d.hpp>
+#include<BlobResult.h>
+#include<tesseract\baseapi.h>
+#include<leptonica\allheaders.h>
+#include<tesseract\strngs.h>
+
+#include<iostream>
+#include<conio.h>
+#include<math.h>
+#include<string.h>
+
+
+
+bool CustomKeyPointSort(const cv::KeyPoint &a, cv::KeyPoint &b)
+{
+if( a.size < b.size) { // your own custom comparison
+return true;
+}
+else {
+return false;
+}
+}
+
+bool intersection(cv::Point2f o1, cv::Point2f p1, cv::Point2f o2, cv::Point2f p2, cv::Point2f &r)
+{
+    cv::Point2f x = o2 - o1;
+    cv::Point2f d1 = p1 - o1;
+	cv::Point2f d2 = p2 - o2;
+
+	//m1 = dy1/dx2; m2 = dy2/dx2; m1 = (y1-y)/(x1-x); x1m1-xm1 = y1 - y;  xm1-y = x1m1-y1=a;  xm2 - y = x2m2-y2=b;
+	//x(m1-m2) = a-b;  x=(a-b)/(m1-m2); y=xm1-a;
+
+	/*float m1 = (float)(o1.y - p1.y)/(o1.x - p1.x);
+	float m2 = (float)(o2.y - p2.y)/(o2.x - p2.x);
+	float a = o1.x * m1 - o1.y;
+	float b = o2.x * m2 - o2.y;
+	r.x = (a-b)/(m1-m2);
+	r.y = r.x*m1 - a;
+
+	std::cout<<o2.x<<" "<<o2.y<<" "<<p1.x<<" "<<p1.y<<"\n";*/
+
+    float cross = d1.x*d2.y - d1.y*d2.x;
+    if (abs(cross) < /*EPS*/1e-8)
+        return false;
+
+    double t1 = (x.x * d2.y - x.y * d2.x)/cross;
+    r = o1 + d1 * t1;
+	//std::cout<<r.x<<" "r.y;
+    return true;
+}
+
+
+int main()
+{
+	cv::Mat image;	
+	cv::Mat gray;
+	cv::Mat thresh;
+	cv::Mat templ;
+	char imgName[] = "C:\\Users\\ChiP\\Pictures\\sudoku1.png";
+
+    image = cv::imread(imgName, CV_LOAD_IMAGE_COLOR);   // Read the file
+
+    if(! image.data )                              // Check for invalid input
+    {
+        std::cout <<  "Could not open or find the image" << std::endl ;
+        return -1;
+    }
+
+	cv::Mat templates[10];
+	templates[1] = cv::imread("C:\\Users\\ChiP\\Pictures\\template1.png", CV_LOAD_IMAGE_GRAYSCALE);
+	templates[2] = cv::imread("C:\\Users\\ChiP\\Pictures\\template2.png", CV_LOAD_IMAGE_GRAYSCALE);
+	templates[3] = cv::imread("C:\\Users\\ChiP\\Pictures\\template3.png", CV_LOAD_IMAGE_GRAYSCALE);
+	templates[4] = cv::imread("C:\\Users\\ChiP\\Pictures\\template4.png", CV_LOAD_IMAGE_GRAYSCALE);
+	templates[5] = cv::imread("C:\\Users\\ChiP\\Pictures\\template5.png", CV_LOAD_IMAGE_GRAYSCALE);
+	templates[6] = cv::imread("C:\\Users\\ChiP\\Pictures\\template6.png", CV_LOAD_IMAGE_GRAYSCALE);
+	templates[7] = cv::imread("C:\\Users\\ChiP\\Pictures\\template7.png", CV_LOAD_IMAGE_GRAYSCALE);
+	templates[8] = cv::imread("C:\\Users\\ChiP\\Pictures\\template8.png", CV_LOAD_IMAGE_GRAYSCALE);
+	templates[9] = cv::imread("C:\\Users\\ChiP\\Pictures\\template9.png", CV_LOAD_IMAGE_GRAYSCALE);
+		
+	cv::cvtColor(image, gray, CV_RGB2GRAY);
+
+	cv::adaptiveThreshold(gray, thresh, 255, cv::ADAPTIVE_THRESH_MEAN_C, cv::THRESH_BINARY_INV, 51, 0);
+
+	cv::Mat th1;
+	cv::adaptiveThreshold(gray, th1, 255, cv::ADAPTIVE_THRESH_MEAN_C, cv::THRESH_BINARY, 51, 0);
+
+	CBlobResult blobs;
+	int i;
+	CBlob *currentBlob;
+	IplImage originalThr = thresh;
+	IplImage original = image;
+
+	// find non-white blobs in thresholded image
+	blobs = CBlobResult( &originalThr, NULL, 0 );
+	// exclude the ones smaller than param2 value
+	blobs.Filter( blobs, B_EXCLUDE, CBlobGetArea(), B_LESS, 100 );
+
+	// get mean gray color of biggest blob
+	CBlob biggestBlob;
+	//CBlobGetMean getMeanColor( &original );
+	double meanGray;
+
+	blobs.GetNthBlob( CBlobGetArea(), 0, biggestBlob );
+	//meanGray = getMeanColor( biggestBlob );
+
+	// display filtered blobs
+	//cvMerge( &originalThr, &originalThr, &originalThr, NULL, &original );
+
+	currentBlob = &biggestBlob;
+	//currentBlob->FillBlob( &original, CV_RGB(255,255,255));
+
+	//thresh = &original;
+	cv::Mat *m = new cv::Mat(thresh.rows, thresh.cols, thresh.type() );
+
+	//cv::rectangle(thresh, biggestBlob.GetBoundingBox(), 128, 5, 8, 0);
+	t_PointList t = biggestBlob.GetConvexHull();
+	cv::Point *p, *p1;
+	//std::cout<<t->total<<"\n";
+	for( i = 0; i < (t ? t->total : 0); i++ )
+	{
+		p = (cv::Point*)cv::getSeqElem(t, i);
+		p1 = (cv::Point*)cv::getSeqElem(t, (i+1)%t->total);
+		//cv::circle(thresh, *p, 5, 128);
+		cv::line(*m, *p, *p1, CV_RGB(255,0,0), 1);
+	}
+	cv::Mat *dst = new cv::Mat(m->rows, m->cols, m->type());
+	cv::Canny(*m, *dst, 50, 200, 5);
+	std::vector<cv::Vec2f> lines;
+
+	cv::HoughLines(*dst, lines, 1, CV_PI/180, 100, 0, 0 );
+
+	double PIby2 = 1.505796;
+	double newLines[4][2] = { {-32767, 0}, {-32767, 0}, {32767, 0}, {32767, 0} };
+	for( size_t i = 0; i < lines.size(); i++ )
+	{
+		float rho = lines[i][0], theta = lines[i][1];
+		
+		//std::cout<<rho<<" "<<theta<<"\n";
+		if( abs(theta - PIby2 ) < 0.35 )
+		{
+			if( rho > newLines[0][0] )
+			{
+				newLines[0][0] = rho - 7;
+				newLines[0][1] = theta;
+			}
+			else if( rho < newLines[2][0] )
+			{
+				newLines[2][0] = rho;
+				newLines[2][1] = theta;
+			}
+		}
+		else
+		{
+			if(abs(rho) < 300)
+			{
+			if( rho > newLines[1][0] )
+			{
+				newLines[1][0] = rho;
+				newLines[1][1] = theta;
+			}
+			}
+			
+			else if( rho < newLines[3][0] )
+			{
+				newLines[3][0] = rho;
+				newLines[3][1] = theta;
+			}
+		}
+	}
+	cv::Point2f *pt5 = new cv::Point2f[4];
+	for( int k = 0; k < 4; k++ )
+	{
+		float rho = newLines[k][0], theta = newLines[k][1];
+		cv::Point2f pt1, pt2;
+		double a = cos(theta), b = sin(theta);
+		double x0 = a*rho, y0 = b*rho;		
+		//std::cout<<rho<<" "<<theta<<"\n";
+		pt1.x = cvRound(x0 + 10*(-b));
+		pt1.y = cvRound(y0 + 10*(a));
+		pt2.x = cvRound(x0 - 10*(-b));
+		pt2.y = cvRound(y0 - 10*(a));
+		//line( *dst, pt1, pt2, cv::Scalar(255,255,255), 1, CV_AA);
+		cv::Point2f pt3, pt4;
+		rho = newLines[(k+1)%4][0]; theta = newLines[(k+1)%4][1];
+		a = cos(theta); b = sin(theta);
+		x0 = a*rho; y0 = b*rho;		
+		//std::cout<<rho<<" "<<theta<<"\n";
+		pt3.x = cvRound(x0 + 10*(-b));
+		pt3.y = cvRound(y0 + 10*(a));
+		pt4.x = cvRound(x0 - 10*(-b));
+		pt4.y = cvRound(y0 - 10*(a));
+		//cv::Point2f *pt5 = new cv::Point2f();
+		intersection(pt1, pt2, pt3, pt4, pt5[k]);
+		cv::circle(*dst, pt5[k], 5, cv::Scalar(255,255,255), 3);
+	}
+	/*for( int k = 0; k < 4; k++ )
+	{
+		cv::Point p1(pt5[k].x,pt5[k].y);
+		cv::Point p2(pt5[(k+1)%4].x,pt5[(k+1)%4].y);
+		cv::line(gray, p1, p2, cv::Scalar(255,0,0), 3);
+		std::cout<<p1.x<<" "<<p1.y<<"\n";
+	}*/
+	cv::Point2f ptd[4]; 
+	ptd[0].x = 0; ptd[0].y = 540;
+	ptd[1].x = 0; ptd[1].y = 0;
+	ptd[2].x = 540; ptd[2].y = 0;
+	ptd[3].x = 540; ptd[3].y = 540;
+	cv::Mat ps1 = cv::Mat(4, 2, CV_32FC1, pt5);
+	cv::Mat ps2 = cv::Mat(4, 2, CV_32FC1, ptd);
+	cv::Mat h2 = cv::findHomography(ps1, ps2);//ps1, ps2, h, 0);
+	//cv::rectangle(thresh, one, two, 128, 5, 8, 0 );
+	cv::Mat mat = cv::Mat(gray.rows, gray.cols, CV_64F);
+	cv::Size size ( 540, 540 );
+	cv::warpPerspective(th1, mat, h2, size);
+	//std::cout<<h2<<"\n";
+
+	/*for( int i = 0; i < 540; i+=60 )
+	{
+		for( int j = 0; j < 540; j+=60 )
+		{
+			cv::Point p1(i, j);
+			cv::Point p2(i+60, j+60);
+			cv::rectangle(mat, p1, p2, cv::Scalar(255, 0, 0), 3);
+		}
+	}*/
+
+	tesseract::TessBaseAPI *readSomeNombers;
+	readSomeNombers = new tesseract::TessBaseAPI();
+	readSomeNombers ->SetVariable( "TESSDATA_PREFIX", "C:\\Users\ChiP\Documents\Visual Studio 2010\Projects\SudokuSolver\SudokuSolver\\" );
+	STRING *c = new STRING();
+	readSomeNombers ->GetVariableAsString( "TESSDATA_PREFIX", c);
+	//readSomeNombers ->SetVariable( "tessedit_char_whitelist", " 123456789" );
+	//readSomeNombers ->SetPageSegMode(tesseract::PSM_SINGLE_CHAR);
+	readSomeNombers ->Init(NULL, "eng" );
+	readSomeNombers ->SetPageSegMode(tesseract::PSM_SINGLE_CHAR);
+	readSomeNombers ->SetVariable( "tessedit_char_whitelist", "123456789" );
+	cv::Mat sub;
+	cv::Mat mat1 = mat.clone();
+	cv::Rect rect;
+	cv::Mat element = cv::getStructuringElement(CV_SHAPE_RECT, cv::Size(5, 5) );
+	cv::morphologyEx(mat, mat1, CV_MOP_CLOSE, element);
+	//cv::morphologyEx(mat1, mat1, CV_MOP_OPEN, element);
+	std::cout<<"done\n";
+	for( int j = 0; j < 540; j+=60 )
+	{
+		for( int i = 0; i < 540; i+=60 )
+		{
+			rect.x = i+12;
+			rect.y = j+8;
+			rect.height = 60-16;
+			rect.width = 60-24;
+			sub = mat1( rect );
+			/*readSomeNombers->SetImage((uchar*)sub.data, sub.size().width, sub.size().height, sub.channels(), sub.step1());
+			readSomeNombers->Recognize(0);
+			const char* out = readSomeNombers->GetUTF8Text();
+			std::cout<<out[0];
+			cv::rectangle(mat1, rect, cv::Scalar(0,0,0), 1);*/
+			
+			
+			cv::Mat subth = sub.clone();
+			cv::adaptiveThreshold(sub, subth, 255, cv::ADAPTIVE_THRESH_MEAN_C, cv::THRESH_BINARY_INV, 21, 0);
+			
+			CBlobResult subblobs;
+			CBlob *subCurrentBlob;
+			IplImage subOriginalThr = subth;
+
+			// find non-white blobs in thresholded image
+			subblobs = CBlobResult( &subOriginalThr, NULL, 0 );
+			// exclude the ones smaller than param2 value
+			subblobs.Filter( subblobs, B_EXCLUDE, CBlobGetArea(), B_LESS, 100 );
+
+			// get mean gray color of biggest blob
+			CBlob subbiggestBlob;
+
+			subblobs.GetNthBlob( CBlobGetArea(), 0, subbiggestBlob );
+			
+			cv::Rect rect1 = subbiggestBlob.GetBoundingBox();
+			cv::Rect rect2(rect1.x + i+12, rect1.y + j+8, rect1.width, rect1.height);
+			
+			sub = mat1( rect2 );
+			cv::resize(sub, sub, cv::Size(10, 10));
+			unsigned char *val = sub.data;
+			double sum = 0;
+			for(int y=0; y<10; y++)
+				for(int x=0; x<10; x++)
+				{
+					sum += val[10*x+y];
+				}
+				//std::cout<<"\""<<sum<<"\"";
+			if(sum>25000)
+				std::cout<<"  ";
+			else if(1*60 == j && 8*60 == i)
+				std::cout<<"  ";
+			else
+			{/*
+			readSomeNombers->SetImage((uchar*)sub.data, sub.size().width, sub.size().height, sub.channels(), sub.step1());
+			readSomeNombers->Recognize(0);
+			const char* out = readSomeNombers->GetUTF8Text();
+			std::cout<<out[0]<<" ";*/
+				int maxval = 25000;
+				char num = ' ';
+				//std::cout<<"(";
+				for(int k=1;k<=9;k++)
+				{
+					unsigned char *val1 = templates[k].data;
+					sum=0;
+					for(int y=0; y<10; y++)
+						for(int x=0; x<10; x++)
+						{
+							sum += abs( val1[10*x+y] - val[10*x+y] );
+						}
+					if(sum < maxval)
+					{
+						num = (char)(0x30+k);
+						maxval = sum;
+					}
+					//std::cout<<sum<<",";
+
+				}//std::cout<<")";
+				std::cout<<num<<" ";
+			}
+			
+			cv::rectangle(mat1, rect2, cv::Scalar(0,0,0), 1);	
+			//cv::rectangle(mat1, rect, cv::Scalar(0,0,0), 1);
+
+			//cv::Mat sub1 = mat(rect2);*/
+			
+
+			
+
+			
+		}
+		std::cout<<"\n";
+	}
+
+	/*cv::Mat tem = templ(cv::Rect(420, 0, 60, 60) );
+	cv::Mat cell = mat(cv::Rect(0, 240, 60, 60) );
+	cv::Mat res(1,1,CV_32FC1);
+	//std::cout<<res.rows<<" "<<res.cols<<"\n";
+	cv::matchTemplate(cell, tem, res, CV_TM_CCORR_NORMED);
+	//std::cout<<res.rows<<" "<<res.cols<<'\n';
+	cv::normalize( res, res, 0, 1, cv::NORM_MINMAX, -1, cv::Mat() );
+	//h2 = cv::findHomography(ps2, ps1);
+	//cv::warpPerspective(mat, gray, h2, cv::Size(gray.rows, gray.cols));
+	/// Localizing the best match with minMaxLoc
+	double minVal; double maxVal; cv::Point minLoc; cv::Point maxLoc;
+	cv::Point matchLoc;
+	minMaxLoc( res, &minVal, &maxVal, &minLoc, &maxLoc, cv::Mat() );
+	matchLoc = maxLoc;
+	//std::cout<<res<<"\n";
+
+	
+	//std::cout<<matchLoc.x<<" "<<matchLoc.y;
+	rectangle( cell, matchLoc, cv::Point( matchLoc.x + tem.cols , matchLoc.y + tem.rows ), cv::Scalar::all(0), 2, 8, 0 );
+	rectangle( res, matchLoc, cv::Point( matchLoc.x + tem.cols , matchLoc.y + tem.rows ), cv::Scalar::all(0), 2, 8, 0 );*/
+
+	cvNamedWindow( "Display window", CV_WINDOW_AUTOSIZE );// Create a window for display.
+    imshow( "Display window", mat1 );                   // Show our image inside it.
+	
+	char* image_window = "Source Image";
+	char* result_window = "Result window";
+	//cv::imshow( image_window, original);
+	//cv::imshow( result_window, res );
+
+    cvWaitKey(0);                                          // Wait for a keystroke in the window
+    return 0;
+}

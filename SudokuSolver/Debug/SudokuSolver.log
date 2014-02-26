@@ -1,0 +1,17 @@
+﻿  SudokuSolver.cpp
+c:\users\chip\documents\visual studio 2010\projects\sudokusolver\sudokusolver\sudokusolver.cpp(214): warning C4244: 'initializing' : conversion from 'double' to 'float', possible loss of data
+c:\users\chip\documents\visual studio 2010\projects\sudokusolver\sudokusolver\sudokusolver.cpp(214): warning C4244: 'initializing' : conversion from 'double' to 'float', possible loss of data
+c:\users\chip\documents\visual studio 2010\projects\sudokusolver\sudokusolver\sudokusolver.cpp(219): warning C4244: '=' : conversion from 'int' to 'float', possible loss of data
+c:\users\chip\documents\visual studio 2010\projects\sudokusolver\sudokusolver\sudokusolver.cpp(220): warning C4244: '=' : conversion from 'int' to 'float', possible loss of data
+c:\users\chip\documents\visual studio 2010\projects\sudokusolver\sudokusolver\sudokusolver.cpp(221): warning C4244: '=' : conversion from 'int' to 'float', possible loss of data
+c:\users\chip\documents\visual studio 2010\projects\sudokusolver\sudokusolver\sudokusolver.cpp(222): warning C4244: '=' : conversion from 'int' to 'float', possible loss of data
+c:\users\chip\documents\visual studio 2010\projects\sudokusolver\sudokusolver\sudokusolver.cpp(225): warning C4244: '=' : conversion from 'double' to 'float', possible loss of data
+c:\users\chip\documents\visual studio 2010\projects\sudokusolver\sudokusolver\sudokusolver.cpp(225): warning C4244: '=' : conversion from 'double' to 'float', possible loss of data
+c:\users\chip\documents\visual studio 2010\projects\sudokusolver\sudokusolver\sudokusolver.cpp(229): warning C4244: '=' : conversion from 'int' to 'float', possible loss of data
+c:\users\chip\documents\visual studio 2010\projects\sudokusolver\sudokusolver\sudokusolver.cpp(230): warning C4244: '=' : conversion from 'int' to 'float', possible loss of data
+c:\users\chip\documents\visual studio 2010\projects\sudokusolver\sudokusolver\sudokusolver.cpp(231): warning C4244: '=' : conversion from 'int' to 'float', possible loss of data
+c:\users\chip\documents\visual studio 2010\projects\sudokusolver\sudokusolver\sudokusolver.cpp(232): warning C4244: '=' : conversion from 'int' to 'float', possible loss of data
+c:\users\chip\documents\visual studio 2010\projects\sudokusolver\sudokusolver\sudokusolver.cpp(327): warning C4244: '=' : conversion from 'double' to 'int', possible loss of data
+c:\users\chip\documents\visual studio 2010\projects\sudokusolver\sudokusolver\sudokusolver.cpp(149): warning C4101: 'meanGray' : unreferenced local variable
+c:\users\chip\documents\visual studio 2010\projects\sudokusolver\sudokusolver\sudokusolver.cpp(271): warning C4101: 'subCurrentBlob' : unreferenced local variable
+  SudokuSolver.vcxproj -> C:\Users\ChiP\Documents\Visual Studio 2010\Projects\SudokuSolver\Debug\SudokuSolver.exe
